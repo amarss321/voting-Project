@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.yml
+    kompose.version: 1.26.1 (a9d05d509)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: worker
+  name: worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: worker
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose.yml
+        kompose.version: 1.26.1 (a9d05d509)
+      creationTimestamp: null
+      labels:
+        io.kompose.network/mynetwork: "true"
+        io.kompose.service: worker
+    spec:
+      containers:
+        - env:
+            - name: POSTGRES_HOST
+              value: postgresdb
+            - name: REDIS_HOST
+              value: redis
+          image: worker
+          livenessProbe:
+            exec:
+              command:
+                - python3
+                - -c
+                - import psycopg2; conn = psycopg2.connect(host='postgresdb', database='postgresdb', user='postgres', password='mysecretpassword', port='5432'); conn.close()
+            failureThreshold: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+          name: worker
+          resources: {}
+      restartPolicy: Always
+status: {}
